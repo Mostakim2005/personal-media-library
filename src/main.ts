@@ -1,114 +1,163 @@
-import {
-	Editor,
-	MarkdownView,
-	MarkdownFileInfo,
-	Modal,
-	Notice,
-	Plugin,
-} from 'obsidian';
-import {
-	DEFAULT_SETTINGS,
-	MyPluginSettings,
-	SampleSettingTab,
-} from './settings';
+import { Notice, Plugin } from 'obsidian';
+import { DEFAULT_SETTINGS, normalizeSettings } from './settings';
+import type { LibrarySettings } from './types';
+import { MediaRepository } from './services/repository';
+import { MetadataService } from './services/metadata';
+import { TranslationService } from './services/translation';
+import { CookieSessionManager } from './services/cookies';
+import { AddMediaModal } from './ui/add-media-modal';
+import { MediaLibrarySettingTab } from './settings-tab';
+import { MediaLibraryView, VIEW_TYPE_MEDIA_LIBRARY } from './ui/library-view';
+import { findDuplicateCandidates, mergeEntries } from './services/duplicate-detector';
+import { DuplicateReviewModal } from './ui/duplicate-review-modal';
+import { buildDiagnostics } from './services/diagnostics';
+import { DiagnosticsModal } from './ui/diagnostics-modal';
 
-// Remember to rename these classes and interfaces!
+export default class PersonalMediaLibraryPlugin extends Plugin {
+  settings: LibrarySettings = DEFAULT_SETTINGS;
+  repository!: MediaRepository;
+  metadata!: MetadataService;
+  translation!: TranslationService;
+  cookies!: CookieSessionManager;
 
-export default class MyPlugin extends Plugin {
-	settings!: MyPluginSettings;
+  private initializing?: Promise<void>;
 
-	async onload() {
-		await this.loadSettings();
+  override onload(): void {
+    this.initializing = this.initialize();
+    void this.initializing.catch((error: unknown) => {
+      console.error('Personal Media Library failed to initialize', error);
+      new Notice('Personal Media Library could not start. Check the developer console for details.');
+    });
+  }
 
-		// This creates an icon in the left ribbon.
-		this.addRibbonIcon('dice', 'Sample', (_evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-		});
+  private async initialize(): Promise<void> {
+    this.settings = normalizeSettings(await this.loadData());
+    this.repository = new MediaRepository(this.app.vault, this.settings.libraryFolder);
+    this.cookies = new CookieSessionManager(this.app);
+    await this.cookies.initialize();
+    this.metadata = new MetadataService(this.cookies);
+    this.translation = new TranslationService();
 
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status bar text');
+    this.addSettingTab(new MediaLibrarySettingTab(this.app, this));
 
-		// This adds a simple command that can be triggered anywhere
-		this.addCommand({
-			id: 'open-modal-simple',
-			name: 'Open modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
-			},
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'replace-selected',
-			name: 'Replace selected content',
-			editorCallback: (
-				editor: Editor,
-				_ctx: MarkdownView | MarkdownFileInfo,
-			) => {
-				editor.replaceSelection('Sample editor command');
-			},
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-modal-complex',
-			name: 'Open modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView =
-					this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
+    this.registerView(VIEW_TYPE_MEDIA_LIBRARY, (leaf) =>
+      new MediaLibraryView(
+        leaf,
+        this.repository,
+        () => this.settings,
+        () => this.openAddMedia(),
+        async () => this.repository.ensureFolder(),
+      ),
+    );
 
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
-				return false;
-			},
-		});
+    this.addCommand({
+      id: 'open-media-library',
+      name: 'Open media library',
+      callback: () => { void this.activateView(); },
+    });
 
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+    this.addCommand({
+      id: 'add-media-entry',
+      name: 'Add media entry from URL',
+      callback: () => this.openAddMedia(),
+    });
 
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(activeDocument, 'click', (_evt: MouseEvent) => {
-			new Notice('Click');
-		});
+    this.addCommand({
+      id: 'manage-provider-cookies',
+      name: 'Manage provider cookies',
+      callback: () => { void import('./ui/cookie-manager-modal').then(({ CookieManagerModal }) => new CookieManagerModal(this.app, this.cookies).open()); },
+    });
 
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(
-			window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000),
-		);
-	}
+    this.addCommand({
+      id: 'create-scene-timestamp',
+      name: 'Create scene timestamp in active note',
+      editorCallback: (editor) => {
+        const line = editor.getCursor().line;
+        editor.replaceSelection(`- 00:00 — Scene description\n`);
+        editor.setCursor({ line: line, ch: 0 });
+      },
+    });
 
-	onunload() {}
+    this.addCommand({
+      id: 'library-diagnostics',
+      name: 'Open library diagnostics',
+      callback: () => { void this.openDiagnostics(); },
+    });
 
-	async loadSettings() {
-		this.settings = Object.assign(
-			{},
-			DEFAULT_SETTINGS,
-			(await this.loadData()) as Partial<MyPluginSettings>,
-		);
-	}
+    this.addCommand({
+      id: 'clear-metadata-cache',
+      name: 'Clear metadata cache',
+      callback: () => { this.metadata.clearCache(); new Notice('Metadata cache cleared.'); },
+    });
 
-	async saveSettings() {
-		await this.saveData(this.settings);
-	}
-}
+    this.addCommand({
+      id: 'find-duplicate-media',
+      name: 'Find likely duplicate media',
+      callback: () => { void this.openDuplicateReview(); },
+    });
 
-class SampleModal extends Modal {
-	onOpen() {
-		const { contentEl } = this;
-		contentEl.setText('Woah!');
-	}
+    this.addRibbonIcon('library', 'Open media library', () => { void this.activateView(); });
+  }
 
-	onClose() {
-		const { contentEl } = this;
-		contentEl.empty();
-	}
+  override onunload(): void {
+    this.metadata?.clearCache();
+  }
+
+  async saveSettings(): Promise<void> {
+    await this.saveData(this.settings);
+  }
+
+  private async activateView(): Promise<void> {
+    const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_MEDIA_LIBRARY)[0];
+    const leaf = existing ?? this.app.workspace.getRightLeaf(false);
+    if (!leaf) {
+      new Notice('Could not open the media library view.');
+      return;
+    }
+
+    await leaf.setViewState({ type: VIEW_TYPE_MEDIA_LIBRARY, active: true });
+    this.app.workspace.revealLeaf(leaf);
+  }
+
+
+  private async openDiagnostics(): Promise<void> {
+    const items = await this.repository.list();
+    new DiagnosticsModal(this.app, buildDiagnostics(items.map((item) => item.entry))).open();
+  }
+
+  private async openDuplicateReview(): Promise<void> {
+    const items = await this.repository.list();
+    const candidates = findDuplicateCandidates(items.map((item) => item.entry));
+    new DuplicateReviewModal(this.app, candidates, async (primaryId, secondaryId) => {
+      const primary = items.find((item) => item.entry.id === primaryId);
+      const secondary = items.find((item) => item.entry.id === secondaryId);
+      if (!primary || !secondary) throw new Error('Media record not found');
+      const merged = mergeEntries(primary.entry, secondary.entry);
+      await this.repository.update(primary.file, () => merged);
+      await this.repository.delete(secondary.file);
+      for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_MEDIA_LIBRARY)) {
+        const view = leaf.view;
+        if (view instanceof MediaLibraryView) await view.render();
+      }
+    }).open();
+  }
+
+  private openAddMedia(): void {
+    new AddMediaModal(
+      this.app,
+      (url) => this.metadata.fetch(url),
+      (title) => this.settings.enableTitleTranslation && this.settings.translationMode === 'jisho'
+        ? this.translation.suggestEnglish(title)
+        : Promise.resolve(undefined),
+      async (entry) => {
+        await this.repository.create(entry);
+        new Notice('Media entry created.');
+        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MEDIA_LIBRARY);
+        for (const leaf of leaves) {
+          const view = leaf.view;
+          if (view instanceof MediaLibraryView) await view.render();
+        }
+      },
+    ).open();
+  }
 }
