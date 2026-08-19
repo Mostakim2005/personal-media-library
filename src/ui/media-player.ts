@@ -154,11 +154,12 @@ export class MediaPlayer {
   private renderControls(variants: VideoVariant[], tracks: SubtitleTrack[]): void {
     const controls = this.root.createDiv({ cls: 'pml-player-ui' });
     const timeline = controls.createDiv({ cls: 'pml-timeline-row' });
-    this.progress = timeline.createEl('input', { cls: 'pml-progress', attr: { type: 'range', min: '0', max: '1000', step: '1', value: '0', 'aria-label': 'Seek video' } });
-    this.progress.addEventListener('input', () => {
+    const progress = timeline.createEl('input', { cls: 'pml-progress', attr: { type: 'range', min: '0', max: '1000', step: '1', value: '0', 'aria-label': 'Seek video' } });
+    this.progress = progress;
+    progress.addEventListener('input', () => {
       const duration = Number(this.adapter?.getDuration());
       if (Number.isFinite(duration) && duration > 0) {
-        this.adapter?.seek((Number(this.progress?.value ?? 0) / 1000) * duration);
+        this.adapter?.seek((Number(progress.value) / 1000) * duration);
       }
     });
     this.timeLabel = timeline.createSpan({ cls: 'pml-time-current', text: '0:00' });
@@ -166,9 +167,10 @@ export class MediaPlayer {
     this.durationLabel = timeline.createSpan({ cls: 'pml-time-duration', text: '0:00' });
 
     const row = controls.createDiv({ cls: 'pml-control-row' });
-    this.playButton = row.createEl('button', { cls: 'pml-control-button', attr: { 'aria-label': 'Play' } });
-    setIcon(this.playButton, 'play');
-    this.playButton.addEventListener('click', () => this.togglePlay());
+    const playButton = row.createEl('button', { cls: 'pml-control-button', attr: { 'aria-label': 'Play' } });
+    this.playButton = playButton;
+    setIcon(playButton, 'play');
+    playButton.addEventListener('click', () => this.togglePlay());
 
     this.makeSkipButton(row, -10, '10 seconds back');
     this.makeSkipButton(row, 10, '10 seconds forward');

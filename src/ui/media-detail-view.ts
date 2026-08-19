@@ -160,7 +160,7 @@ export class MediaDetailModal extends Modal {
     const holder = this.contentEl.createDiv({ cls: 'pml-player-host' });
     const adjusted = startSeconds === undefined ? source : { ...source, startSeconds };
     const playback = this.entry.playback[source.id];
-    this.player = new MediaPlayer(holder, adjusted, this.entry.scenes, (seconds) => this.onSceneCapture(seconds), (position, duration, completed) => {
+    this.player = new MediaPlayer(holder, adjusted, this.entry.scenes, (seconds) => { this.onSceneCapture(seconds); void this.onPersistScene?.(seconds); }, (position, duration, completed) => {
       void this.onPersistPlayback?.(source.id, position, duration, completed);
     }, playback?.positionSeconds);
   }

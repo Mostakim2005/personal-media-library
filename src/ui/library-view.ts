@@ -139,7 +139,7 @@ export class MediaLibraryView extends ItemView {
             }));
           },
           entries,
-          async (update) => {
+          async (update: Partial<MediaEntry>) => {
             await this.repository.update(item.file, (current) => ({ ...current, ...update }));
           },
           async (sourceId, positionSeconds, durationSeconds, completed) => {
