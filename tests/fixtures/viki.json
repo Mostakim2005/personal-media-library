@@ -1,0 +1,13 @@
+{
+  "expectedFields": [
+    "title",
+    "thumbnail",
+    "description",
+    "cast",
+    "genres",
+    "subtitles",
+    "year",
+    "episodes",
+    "rating"
+  ]
+}

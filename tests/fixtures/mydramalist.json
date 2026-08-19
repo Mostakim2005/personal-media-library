@@ -1,0 +1,19 @@
+{
+  "expectedFields": [
+    "title",
+    "originalTitle",
+    "thumbnail",
+    "description",
+    "cast",
+    "characters",
+    "genres",
+    "tags",
+    "country",
+    "episodes",
+    "releaseDate",
+    "duration",
+    "score",
+    "network",
+    "status"
+  ]
+}

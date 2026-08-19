@@ -1,0 +1,11 @@
+{
+  "expectedFields": [
+    "title",
+    "thumbnail",
+    "description",
+    "cast",
+    "year",
+    "duration",
+    "score"
+  ]
+}

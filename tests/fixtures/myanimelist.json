@@ -1,16 +1,16 @@
 {
   "expectedFields": [
     "title",
+    "originalTitle",
     "thumbnail",
     "description",
     "authors",
-    "artists",
-    "characters",
+    "genres",
     "tags",
-    "parody",
-    "language",
+    "year",
+    "status",
     "chapters",
-    "mediaType",
-    "sourceSite"
+    "volumes",
+    "score"
   ]
 }

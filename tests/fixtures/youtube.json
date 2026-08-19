@@ -1,0 +1,8 @@
+{
+  "expectedFields": [
+    "title",
+    "thumbnail",
+    "description",
+    "sourceSite"
+  ]
+}
