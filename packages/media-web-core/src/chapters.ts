@@ -9,8 +9,10 @@ export function extractTimestampMarkers(text: string): TimestampMarker[] {
     if (!line) continue;
     const match = line.match(/^(\d{1,2}:\d{2}(?::\d{2})?)\s*(?:[-–—|]|\s{2,})\s*(.+)$/);
     if (!match) continue;
-    const seconds = parseTimestamp(match[1]);
+    const timestamp = match[1];
     const title = match[2]?.trim();
+    if (!timestamp) continue;
+    const seconds = parseTimestamp(timestamp);
     if (seconds === undefined || !title || seen.has(seconds)) continue;
     seen.add(seconds);
     results.push({ startSeconds: seconds, title });
