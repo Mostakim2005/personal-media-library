@@ -13,12 +13,12 @@ export class MyDramaListProvider implements MetadataProvider {
     const title = text(document.querySelector('h1.film-title')) ?? meta(document, ['meta[property="og:title"]']);
     if (!title) return undefined;
     const description = meta(document, ['meta[property="og:description"]', 'meta[name="description"]']);
-    const thumbnail = meta(document, ['meta[property="og:image"]']) ?? document.querySelector('link[rel="image_src"]')?.getAttribute('href');
+    const thumbnail = meta(document, ['meta[property="og:image"]']) ?? document.querySelector('link[rel="image_src"]')?.getAttribute('href') ?? undefined;
 
     const cast: MediaPerson[] = [];
     for (const node of Array.from(document.querySelectorAll('[itempropx="actor"] a[href*="/people/"], [itemprop="actor"] a[href*="/people/"]'))) {
       const name = text(node);
-      if (name) cast.push({ name, role: text(node.parentElement?.querySelector('small')) ?? 'cast', url: node.getAttribute('href') ?? undefined });
+      if (name) cast.push({ name, role: text(node.parentElement?.querySelector('small') ?? null) ?? 'cast', url: node.getAttribute('href') ?? undefined });
     }
 
     const score = labeled(document, 'Score')?.match(/\d+(?:\.\d+)?/)?.[0];

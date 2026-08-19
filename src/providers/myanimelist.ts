@@ -1,6 +1,6 @@
 import type { MetadataProvider, ProviderContext } from './types';
 import type { MetadataResult, MediaPerson } from '../types';
-import { meta, attr, labeled, text } from './helpers';
+import { meta, attr, text } from './helpers';
 
 export class MyAnimeListProvider implements MetadataProvider {
   id = 'myanimelist';

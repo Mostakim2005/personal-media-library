@@ -6,9 +6,6 @@ function domain(url: string): string {
   try { return new URL(url).hostname.replace(/^www\./, '').toLowerCase(); } catch { return ''; }
 }
 
-function split(value: string | undefined): string[] {
-  return value ? uniqueStrings(value.split(/\s*(?:\||,)\s*/)) : [];
-}
 
 function labeled(document: Document, labels: string[]): string[] {
   const values: string[] = [];
@@ -17,7 +14,8 @@ function labeled(document: Document, labels: string[]): string[] {
     if (!value) continue;
     for (const label of labels) {
       const match = value.match(new RegExp(`^${label}\\s*:?\\s*(.+)$`, 'i'));
-      if (match) values.push(match[1]);
+      const captured = match?.[1];
+      if (captured) values.push(captured);
     }
   }
   return uniqueStrings(values);

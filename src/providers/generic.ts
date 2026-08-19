@@ -73,7 +73,7 @@ export class GenericProvider implements MetadataProvider {
           type: node.getAttribute('type') ?? undefined,
         };
       })
-      .filter((v): v is { label: string; url: string; type?: string } => Boolean(v));
+      .filter((v): v is NonNullable<typeof v> => Boolean(v));
 
     const subtitleTracks = Array.from(document.querySelectorAll('track[src]'))
       .map((node) => {
@@ -86,7 +86,7 @@ export class GenericProvider implements MetadataProvider {
           kind: node.getAttribute('kind') === 'captions' ? 'captions' as const : 'subtitles' as const,
         };
       })
-      .filter((v): v is { label: string; language?: string; url: string; kind: 'captions' | 'subtitles' } => Boolean(v));
+      .filter((v): v is NonNullable<typeof v> => Boolean(v));
 
     return {
       url,

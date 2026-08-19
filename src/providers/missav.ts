@@ -1,6 +1,6 @@
 import type { MetadataProvider, ProviderContext } from './types';
 import type { MetadataResult, MediaPerson, SubtitleTrack, VideoVariant } from '../types';
-import { meta, text, all, absoluteUrl, uniqueStrings } from './helpers';
+import { meta, all, absoluteUrl, uniqueStrings } from './helpers';
 
 function host(url: string): string {
   try { return new URL(url).hostname.replace(/^www\./, '').toLowerCase(); } catch { return ''; }
