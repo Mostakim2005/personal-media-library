@@ -27,6 +27,7 @@ export function findDuplicateCandidates(entries: MediaEntry[], minimum = 0.72): 
     for (let j = i + 1; j < entries.length; j += 1) {
       const left = entries[i];
       const right = entries[j];
+      if (!left || !right) continue;
       const titleScore = similarity(normalize(left.title), normalize(right.title));
       const originalScore = similarity(normalize(left.originalTitle), normalize(right.originalTitle));
       const urlOverlap = left.sources.some((a) => right.sources.some((b) => {

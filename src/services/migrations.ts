@@ -3,9 +3,7 @@ import { normalizeSettings } from '../settings';
 
 export const CURRENT_SCHEMA_VERSION = 3;
 
-interface VersionedMediaEntry extends MediaEntry {
-  schemaVersion?: number;
-}
+type VersionedMediaEntry = Omit<MediaEntry, 'schemaVersion'> & { schemaVersion?: number; };
 
 function asArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? value as T[] : [];

@@ -86,6 +86,16 @@ export class MediaRepository {
     await this.vault.delete(file);
   }
 
+  private async listDeterministic(folder: TFolder): Promise<Array<{ file: TFile; entry: MediaEntry }>> {
+    const result: Array<{ file: TFile; entry: MediaEntry }> = [];
+    for (const child of folder.children) {
+      if (!(child instanceof TFile) || child.extension !== 'md') continue;
+      const entry = await this.read(child);
+      if (entry) result.push({ file: child, entry });
+    }
+    return result.sort((a, b) => a.entry.title.localeCompare(b.entry.title));
+  }
+
   private async uniquePath(path: string): Promise<string> {
     if (!this.vault.getAbstractFileByPath(path)) return path;
     const dot = path.lastIndexOf('.');
