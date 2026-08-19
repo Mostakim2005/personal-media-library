@@ -1,0 +1,10 @@
+[
+  {
+    "name": "v0.3 record gets defaults",
+    "input": {"id":"old-1","title":"Legacy title","authors":[],"sources":[],"scenes":[],"pages":[]}
+  },
+  {
+    "name": "v0.9 record preserves user state",
+    "input": {"id":"old-9","title":"Current title","collections":["Favorites"],"favorite":true,"userStatus":"watching","playback":{}}
+  }
+]
