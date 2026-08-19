@@ -170,6 +170,8 @@ export interface LibrarySettings {
   maxDescriptionLength: number;
   maxImages: number;
   autoDetectTimestampUrls: boolean;
+  dashboardVisible: boolean;
+  enableDuplicateDetection: boolean;
 }
 
 export interface MetadataResult {

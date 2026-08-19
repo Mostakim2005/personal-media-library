@@ -1,5 +1,6 @@
 import type { LibrarySettings, MetadataField } from './types';
 import { ALL_METADATA_FIELDS } from './types';
+export { ALL_METADATA_FIELDS } from './types';
 
 export const MINIMAL_FIELDS: MetadataField[] = ['title', 'thumbnail', 'description'];
 export const STANDARD_FIELDS: MetadataField[] = [
