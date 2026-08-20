@@ -54,8 +54,11 @@ export function jsonLd(document: Document): unknown[] {
     if (!source) continue;
     try {
       const parsed: unknown = JSON.parse(source);
-      if (Array.isArray(parsed)) values.push(...parsed);
-      else values.push(parsed);
+      if (Array.isArray(parsed)) {
+        for (const item of parsed as unknown[]) values.push(item);
+      } else {
+        values.push(parsed);
+      }
     } catch {
       // Ignore malformed structured data.
     }
