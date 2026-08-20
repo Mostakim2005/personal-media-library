@@ -34,7 +34,7 @@ export function migrateMediaEntry(value: unknown): MediaEntry | undefined {
     collections: asArray(raw.collections),
     relations: asArray(raw.relations),
     provenance: asArray(raw.provenance),
-    playback: raw.playback && typeof raw.playback === 'object' ? raw.playback as MediaEntry['playback'] : {},
+    playback: raw.playback && typeof raw.playback === 'object' ? raw.playback : {},
     favorite: typeof raw.favorite === 'boolean' ? raw.favorite : false,
     userStatus: raw.userStatus === 'watching' || raw.userStatus === 'completed' || raw.userStatus === 'paused' || raw.userStatus === 'dropped'
       ? raw.userStatus

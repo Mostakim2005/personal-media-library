@@ -36,6 +36,6 @@ export class TranslationService {
 
   private shouldQuery(value: string): boolean {
     if (looksJapanese(value)) return true;
-    return /^[A-Za-z0-9\s'!?,.\-]+$/.test(value) && value.split(/\s+/).length <= 10;
+    return /^[A-Za-z0-9\s'!?,.-]+$/.test(value) && value.split(/\s+/).length <= 10;
   }
 }
