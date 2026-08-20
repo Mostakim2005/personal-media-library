@@ -20,7 +20,7 @@ export class MetadataCache {
   set<T>(key: string, value: T, ttlMs = this.options.ttlMs): void {
     const entry: CacheEntry<T> = { value, createdAt: Date.now(), expiresAt: Date.now() + ttlMs };
     this.entries.delete(key);
-    this.entries.set(key, entry as CacheEntry<unknown>);
+    this.entries.set(key, entry);
     while (this.entries.size > this.options.maxEntries) {
       const oldest = this.entries.keys().next().value;
       if (oldest === undefined) break;

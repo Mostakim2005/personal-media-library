@@ -31,14 +31,14 @@ export function parseTimestamp(value: string): number | undefined {
   const parts = text.split(':').map(Number);
   if (parts.some((part) => !Number.isFinite(part) || part < 0)) return undefined;
   if (parts.length === 2) {
-    const minutes = parts[0]; const seconds = parts[1];
-    if (minutes === undefined || seconds === undefined) return undefined;
-    return minutes * 60 + seconds;
+    const [minutes, seconds] = parts;
+    return minutes !== undefined && seconds !== undefined ? minutes * 60 + seconds : undefined;
   }
   if (parts.length === 3) {
-    const hours = parts[0]; const minutes = parts[1]; const seconds = parts[2];
-    if (hours === undefined || minutes === undefined || seconds === undefined) return undefined;
-    return hours * 3600 + minutes * 60 + seconds;
+    const [hours, minutes, seconds] = parts;
+    return hours !== undefined && minutes !== undefined && seconds !== undefined
+      ? hours * 3600 + minutes * 60 + seconds
+      : undefined;
   }
   return undefined;
 }
