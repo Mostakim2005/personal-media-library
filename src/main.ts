@@ -26,7 +26,7 @@ export default class PersonalMediaLibraryPlugin extends Plugin {
     this.initializing = this.initialize();
     void this.initializing.catch((error: unknown) => {
       console.error('Personal Media Library failed to initialize', error);
-      new Notice('Personal Media Library could not start. Check the developer console for details.');
+      new Notice('Personal media library could not start. Check the developer console for details.');
     });
   }
 
@@ -116,7 +116,7 @@ export default class PersonalMediaLibraryPlugin extends Plugin {
     }
 
     await leaf.setViewState({ type: VIEW_TYPE_MEDIA_LIBRARY, active: true });
-    this.app.workspace.revealLeaf(leaf);
+    void this.app.workspace.revealLeaf(leaf);
   }
 
 
