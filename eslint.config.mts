@@ -10,12 +10,22 @@ export default tseslint.config(
       'eslint.config.mjs',
       '**/*.mjs',
       '**/*.cjs',
-      '**/*.js',
       'scripts/**',
       'tests/**',
     ],
   },
-  js.configs.recommended,
-  ...tseslint.configs.recommendedTypeChecked,
-  obsidian.configs.recommended,
+  {
+    files: ['src/**/*.ts', 'packages/**/*.ts'],
+    extends: [
+      js.configs.recommended,
+      ...tseslint.configs.recommendedTypeChecked,
+      obsidian.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
 );
