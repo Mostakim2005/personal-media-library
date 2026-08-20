@@ -131,8 +131,8 @@ export class MediaPlayer {
 
     video.addEventListener('timeupdate', () => this.syncTimeline(false));
     video.addEventListener('loadedmetadata', () => {
-      if (this.initialPosition !== undefined) this.adapter?.seek(this.initialPosition);
-      else if (this.source.startSeconds !== undefined) this.adapter?.seek(this.source.startSeconds);
+      if (this.initialPosition !== undefined) void this.adapter?.seek(this.initialPosition);
+      else if (this.source.startSeconds !== undefined) void this.adapter?.seek(this.source.startSeconds);
       this.syncTimeline(false);
     }, { once: true });
     video.addEventListener('ended', () => this.syncTimeline(true));
@@ -159,7 +159,7 @@ export class MediaPlayer {
     progress.addEventListener('input', () => {
       const duration = Number(this.adapter?.getDuration());
       if (Number.isFinite(duration) && duration > 0) {
-        this.adapter?.seek((Number(progress.value) / 1000) * duration);
+        void this.adapter?.seek((Number(progress.value) / 1000) * duration);
       }
     });
     this.timeLabel = timeline.createSpan({ cls: 'pml-time-current', text: '0:00' });
@@ -190,7 +190,7 @@ export class MediaPlayer {
 
     if (tracks.length) {
       const subtitle = row.createEl('select', { cls: 'pml-player-select', attr: { 'aria-label': 'Subtitle track' } });
-      subtitle.createEl('option', { text: 'CC off', value: '' });
+      subtitle.createEl('option', { text: 'Cc off', value: '' });
       for (const track of tracks) subtitle.createEl('option', { text: track.label, value: track.label });
       subtitle.addEventListener('change', () => this.setSubtitle(subtitle.value));
     }
@@ -216,7 +216,7 @@ export class MediaPlayer {
     button.textContent = delta > 0 ? `+${delta}s` : `${delta}s`;
     button.addEventListener('click', () => {
       const current = Number(this.adapter?.getCurrentTime());
-      if (Number.isFinite(current)) this.adapter?.seek(current + delta);
+      if (Number.isFinite(current)) void this.adapter?.seek(current + delta);
     });
   }
 
@@ -246,7 +246,7 @@ export class MediaPlayer {
   private togglePlay(): void {
     if (!this.adapter || !this.playButton) return;
     if (this.adapter.isPlaying()) {
-      this.adapter.pause();
+      void this.adapter.pause();
       setIcon(this.playButton, 'play');
     } else {
       void this.adapter.play();
