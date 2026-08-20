@@ -6,7 +6,7 @@ export default tseslint.config(
   {
     ignores: [
       'main.js',
-      'esbuild.config.mjs',
+      '**/*.mjs',
       'scripts/**/*.mjs',
       'tests/**/*.mjs',
     ],
