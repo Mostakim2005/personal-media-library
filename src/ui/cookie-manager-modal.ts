@@ -94,9 +94,9 @@ class CookieEditorModal extends Modal {
     contentEl.createEl('h3', { text: `Save ${this.label} session` });
     new Setting(contentEl)
       .setName('Cookie header')
-      .setDesc('Paste a normal cookie header value such as sid=...; token=.... Treat session cookies like passwords.')
+      .setDesc('Paste a normal cookie header value such as sid=...; Token=.... Treat session cookies like passwords.')
       .addText((text) => text
-        .setPlaceholder('name=value; name2=value2')
+        .setPlaceholder('Name=value; name2=value2')
         .onChange((value) => { this.value = value; }));
 
     new Setting(contentEl)
