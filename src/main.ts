@@ -20,22 +20,43 @@ export default class PersonalMediaLibraryPlugin extends Plugin {
   translation!: TranslationService;
   cookies!: CookieSessionManager;
 
-  private initializing?: Promise<void>;
+  private startupError?: string;
+  private cookiesReady?: Promise<void>;
 
   override onload(): void {
-    this.initializing = this.initialize();
-    void this.initializing.catch((error: unknown) => {
-      console.error('Personal Media Library failed to initialize', error);
-      new Notice('Personal media library could not start. Check the developer console for details.');
-    });
+    // Build the core synchronously so a failure in an optional service cannot
+    // make Obsidian reject the plugin as a whole.
+    try {
+      this.settings = normalizeSettings(undefined);
+    } catch {
+      this.settings = { ...DEFAULT_SETTINGS, fields: { ...DEFAULT_SETTINGS.fields } };
+    }
+
+    this.registerCoreUi();
+    void this.loadPersistedSettings();
+    this.initializeOptionalServices();
   }
 
-  private async initialize(): Promise<void> {
-    this.settings = normalizeSettings(await this.loadData());
+  private registerCoreUi(): void {
     this.repository = new MediaRepository(this.app.vault, this.settings.libraryFolder);
+
+    // The cookie manager is safe to construct before its secrets are loaded.
     this.cookies = new CookieSessionManager(this.app);
-    await this.cookies.initialize();
-    this.metadata = new MetadataService(this.cookies);
+    this.cookiesReady = this.cookies.initialize().catch((error: unknown) => {
+      this.startupError = error instanceof Error ? error.message : String(error);
+      console.error('Personal Media Library cookie initialization failed', error);
+    });
+
+    try {
+      this.metadata = new MetadataService(this.cookies);
+    } catch (error: unknown) {
+      this.startupError = error instanceof Error ? error.message : String(error);
+      console.error('Personal Media Library metadata service failed to initialize', error);
+      // Keep a functional fallback service. Provider-specific failures are handled
+      // inside MetadataService; this path is only for truly broken initialization.
+      this.metadata = new MetadataService();
+    }
+
     this.translation = new TranslationService();
 
     this.addSettingTab(new MediaLibrarySettingTab(this.app, this));
@@ -47,13 +68,14 @@ export default class PersonalMediaLibraryPlugin extends Plugin {
         () => this.settings,
         () => this.openAddMedia(),
         async () => this.repository.ensureFolder(),
+        async () => this.saveSettings(),
       ),
     );
 
     this.addCommand({
       id: 'open-media-library',
       name: 'Open media library',
-      callback: () => { void this.activateView(); },
+      callback: () => { void this.activateView().catch((error: unknown) => this.reportError('Could not open the media library.', error)); },
     });
 
     this.addCommand({
@@ -65,7 +87,11 @@ export default class PersonalMediaLibraryPlugin extends Plugin {
     this.addCommand({
       id: 'manage-provider-cookies',
       name: 'Manage provider cookies',
-      callback: () => { void import('./ui/cookie-manager-modal').then(({ CookieManagerModal }) => new CookieManagerModal(this.app, this.cookies).open()); },
+      callback: () => {
+        void import('./ui/cookie-manager-modal')
+          .then(({ CookieManagerModal }) => new CookieManagerModal(this.app, this.cookies).open())
+          .catch((error: unknown) => this.reportError('Could not open provider sessions.', error));
+      },
     });
 
     this.addCommand({
@@ -73,30 +99,58 @@ export default class PersonalMediaLibraryPlugin extends Plugin {
       name: 'Create scene timestamp in active note',
       editorCallback: (editor) => {
         const line = editor.getCursor().line;
-        editor.replaceSelection(`- 00:00 — Scene description\n`);
-        editor.setCursor({ line: line, ch: 0 });
+        editor.replaceSelection('- 00:00 — Scene description\n');
+        editor.setCursor({ line, ch: 0 });
       },
     });
 
     this.addCommand({
       id: 'library-diagnostics',
       name: 'Open library diagnostics',
-      callback: () => { void this.openDiagnostics(); },
+      callback: () => { void this.openDiagnostics().catch((error: unknown) => this.reportError('Could not open diagnostics.', error)); },
     });
 
     this.addCommand({
       id: 'clear-metadata-cache',
       name: 'Clear metadata cache',
-      callback: () => { this.metadata.clearCache(); new Notice('Metadata cache cleared.'); },
+      callback: () => {
+        this.metadata.clearCache();
+        new Notice('Metadata cache cleared.');
+      },
     });
 
     this.addCommand({
       id: 'find-duplicate-media',
       name: 'Find likely duplicate media',
-      callback: () => { void this.openDuplicateReview(); },
+      callback: () => { void this.openDuplicateReview().catch((error: unknown) => this.reportError('Could not open duplicate review.', error)); },
     });
 
-    this.addRibbonIcon('library', 'Open media library', () => { void this.activateView(); });
+    this.addRibbonIcon('library', 'Open media library', () => {
+      void this.activateView().catch((error: unknown) => this.reportError('Could not open the media library.', error));
+    });
+  }
+
+  private async loadPersistedSettings(): Promise<void> {
+    try {
+      const stored = await this.loadData();
+      this.settings = normalizeSettings(stored);
+      this.repository = new MediaRepository(this.app.vault, this.settings.libraryFolder);
+    } catch (error: unknown) {
+      this.settings = normalizeSettings(undefined);
+      this.startupError = error instanceof Error ? error.message : String(error);
+      console.error('Personal Media Library settings load failed', error);
+      new Notice('Personal media library loaded with safe default settings.');
+    }
+  }
+
+  private initializeOptionalServices(): void {
+    // Keep startup independent from cookie storage. Metadata requests will use
+    // whatever session data is available by the time they execute.
+    void this.cookiesReady?.catch(() => undefined);
+
+    if (this.startupError) {
+      console.warn('Personal Media Library started with recoverable issues:', this.startupError);
+    }
   }
 
   override onunload(): void {
@@ -116,9 +170,13 @@ export default class PersonalMediaLibraryPlugin extends Plugin {
     }
 
     await leaf.setViewState({ type: VIEW_TYPE_MEDIA_LIBRARY, active: true });
-    void this.app.workspace.revealLeaf(leaf);
+    const workspace = this.app.workspace as typeof this.app.workspace & {
+      revealLeaf?: (workspaceLeaf: typeof leaf) => Promise<void> | void;
+    };
+    if (typeof workspace.revealLeaf === 'function') {
+      await workspace.revealLeaf(leaf);
+    }
   }
-
 
   private async openDiagnostics(): Promise<void> {
     const items = await this.repository.list();
@@ -128,6 +186,11 @@ export default class PersonalMediaLibraryPlugin extends Plugin {
   private async openDuplicateReview(): Promise<void> {
     const items = await this.repository.list();
     const candidates = findDuplicateCandidates(items.map((item) => item.entry));
+    if (!candidates.length) {
+      new Notice('No likely duplicate media found.');
+      return;
+    }
+
     new DuplicateReviewModal(this.app, candidates, async (primaryId, secondaryId) => {
       const primary = items.find((item) => item.entry.id === primaryId);
       const secondary = items.find((item) => item.entry.id === secondaryId);
@@ -159,5 +222,10 @@ export default class PersonalMediaLibraryPlugin extends Plugin {
         }
       },
     ).open();
+  }
+
+  private reportError(message: string, error: unknown): void {
+    console.error(`Personal Media Library: ${message}`, error);
+    new Notice(message);
   }
 }
