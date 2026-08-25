@@ -8,32 +8,55 @@ function people(value: MediaEntry['authors']): string {
   return value.map((p) => p.name).filter(Boolean).join(', ');
 }
 
-export function renderMediaCard(parent: HTMLElement, entry: MediaEntry, settings: LibrarySettings, onOpen: () => void): void {
+function safeStatus(entry: MediaEntry): string {
+  return entry.userStatus ? entry.userStatus.replace('-', ' ') : '';
+}
+
+export function renderMediaCard(
+  parent: HTMLElement,
+  entry: MediaEntry,
+  settings: LibrarySettings,
+  onOpen: () => void,
+): void {
   const card = parent.createDiv({ cls: 'pml-card' });
   card.tabIndex = 0;
-  card.addEventListener('click', onOpen);
-  card.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      onOpen();
-    }
-  });
+  card.setAttribute('role', 'button');
+  card.setAttribute('aria-label', `Open ${entry.translatedTitle || entry.title}`);
+
+  const media = card.createDiv({ cls: 'pml-card-media' });
 
   if (enabled(settings, 'thumbnail') && entry.thumbnail) {
-    const image = card.createEl('img', { cls: 'pml-card-image' });
+    const image = media.createEl('img', {
+      cls: 'pml-card-image',
+      attr: { alt: entry.title, loading: 'lazy', decoding: 'async' },
+    });
     image.src = entry.thumbnail;
-    image.alt = entry.title;
-    image.loading = 'lazy';
-    image.addEventListener('error', () => image.remove());
+    image.addEventListener('error', () => {
+      image.remove();
+      media.addClass('pml-card-media-fallback');
+    });
+  } else {
+    media.addClass('pml-card-media-fallback');
   }
 
-  if (entry.favorite) card.createDiv({ cls: 'pml-card-favorite', text: '★' });
+  const mediaOverlay = media.createDiv({ cls: 'pml-card-overlay' });
+  if (entry.favorite) {
+    mediaOverlay.createSpan({ cls: 'pml-card-favorite', text: '★', attr: { 'aria-label': 'Favorite' } });
+  }
+  mediaOverlay.createSpan({ cls: 'pml-card-type', text: entry.mediaType });
+
   const body = card.createDiv({ cls: 'pml-card-body' });
-  if (enabled(settings, 'title')) body.createEl('div', { cls: 'pml-card-title', text: entry.translatedTitle || entry.title });
+  if (enabled(settings, 'title')) {
+    body.createDiv({ cls: 'pml-card-title', text: entry.translatedTitle || entry.title });
+  }
+
+  if (entry.originalTitle && entry.originalTitle !== (entry.translatedTitle || entry.title) && settings.detailLevel !== 'minimal') {
+    body.createDiv({ cls: 'pml-card-subtitle', text: entry.originalTitle });
+  }
 
   const meta = body.createDiv({ cls: 'pml-card-meta' });
-  if (entry.userStatus) meta.createSpan({ text: entry.userStatus });
-  meta.createSpan({ text: entry.mediaType });
+  const status = safeStatus(entry);
+  if (status) meta.createSpan({ cls: `pml-status pml-status-${entry.userStatus}`, text: status });
   if (enabled(settings, 'year') && entry.year) meta.createSpan({ text: String(entry.year) });
   if (enabled(settings, 'rating') && entry.rating !== undefined) meta.createSpan({ text: `★ ${entry.rating.toFixed(1)}` });
   if (enabled(settings, 'score') && entry.score !== undefined) meta.createSpan({ text: `Score ${entry.score.toFixed(1)}` });
@@ -41,29 +64,41 @@ export function renderMediaCard(parent: HTMLElement, entry: MediaEntry, settings
   const fields: Array<[MetadataField, string | undefined]> = [
     ['authors', people(entry.authors)],
     ['artists', people(entry.artists)],
-    ['cast', people(entry.cast)],
-    ['characters', people(entry.characters)],
     ['director', people(entry.director)],
     ['producer', people(entry.producer)],
     ['studio', entry.studio],
     ['network', entry.network],
   ];
-  for (const [field, value] of fields) {
-    if (enabled(settings, field) && value) body.createEl('div', { cls: 'pml-card-secondary', text: value });
+
+  if (settings.detailLevel !== 'minimal') {
+    for (const [field, value] of fields) {
+      if (enabled(settings, field) && value) body.createDiv({ cls: 'pml-card-secondary', text: value });
+    }
   }
 
-  if (enabled(settings, 'description') && entry.description) {
-    body.createEl('div', { cls: 'pml-card-description', text: entry.description });
+  if (settings.detailLevel === 'professional' && enabled(settings, 'description') && entry.description) {
+    body.createDiv({ cls: 'pml-card-description', text: entry.description });
   }
 
   const chips: Array<[MetadataField, string[]]> = [
-    ['genres', entry.genres], ['tags', entry.tags], ['parody', entry.parody], ['subtitles', entry.subtitles],
+    ['genres', entry.genres], ['tags', entry.tags], ['subtitles', entry.subtitles],
   ];
-  for (const [field, values] of chips) {
-    if (enabled(settings, field) && values.length) body.createEl('div', { cls: 'pml-card-tags', text: values.join(' · ') });
+  if (settings.detailLevel !== 'minimal') {
+    const chipHost = body.createDiv({ cls: 'pml-card-tags' });
+    for (const [field, values] of chips) {
+      if (!enabled(settings, field)) continue;
+      for (const value of values.slice(0, 4)) {
+        chipHost.createSpan({ text: value });
+      }
+    }
+    if (!chipHost.children.length) chipHost.remove();
   }
 
-  if (enabled(settings, 'sourceSite') && entry.sourceSite) {
-    body.createEl('div', { cls: 'pml-card-source', text: entry.sourceSite });
-  }
+  card.addEventListener('click', () => onOpen());
+  card.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onOpen();
+    }
+  });
 }
