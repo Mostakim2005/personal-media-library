@@ -1,6 +1,6 @@
 import { Notice, Plugin } from 'obsidian';
 import { DEFAULT_SETTINGS, normalizeSettings } from './settings';
-import type { LibrarySettings, MediaEntry } from './types';
+import type { LibrarySettings } from './types';
 import { MediaRepository } from './services/repository';
 import { MetadataService } from './services/metadata';
 import { TranslationService } from './services/translation';
@@ -132,7 +132,7 @@ export default class PersonalMediaLibraryPlugin extends Plugin {
       const primary = items.find((item) => item.entry.id === primaryId);
       const secondary = items.find((item) => item.entry.id === secondaryId);
       if (!primary || !secondary) throw new Error('Media record not found');
-      const merged: MediaEntry = mergeEntries(primary.entry as MediaEntry, secondary.entry as MediaEntry);
+      const merged = mergeEntries(primary.entry, secondary.entry);
       await this.repository.update(primary.file, () => merged);
       await this.repository.delete(secondary.file);
       for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_MEDIA_LIBRARY)) {
