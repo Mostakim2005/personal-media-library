@@ -28,7 +28,7 @@ export class MediaLibrarySettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Preset')
-      .setDesc('Choose Minimal, Standard, or Professional, or use Custom to control every field.')
+      .setDesc('Choose minimal, standard, or professional, or use custom to control every field.')
       .addDropdown((dropdown) => dropdown
         .addOptions({ minimal: 'Minimal', standard: 'Standard', professional: 'Professional', custom: 'Custom' })
         .setValue(this.plugin.settings.detailLevel)
