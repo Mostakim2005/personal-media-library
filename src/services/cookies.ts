@@ -68,13 +68,29 @@ export function sanitizeCookieHeader(value: string): string | undefined {
 
 export class CookieSessionManager {
   private readonly records = new Map<CookieProvider, CookieRecord>();
+  private initialized = false;
 
   constructor(private readonly app: App) {}
 
   async initialize(): Promise<void> {
+    // SecretStorage is supported on current desktop/mobile Obsidian builds, but
+    // fail soft if a legacy/mobile runtime does not expose it.
+    const storage = this.app.secretStorage;
+    if (!storage) {
+      this.initialized = true;
+      return;
+    }
+
     for (const provider of Object.keys(IDS) as CookieProvider[]) {
-      const raw = this.app.secretStorage.getSecret(IDS[provider]);
+      let raw: string | null = null;
+      try {
+        raw = storage.getSecret(IDS[provider]);
+      } catch (error) {
+        console.warn(`Personal Media Library: could not read ${provider} session`, error);
+        continue;
+      }
       if (!raw) continue;
+
       try {
         const parsed: unknown = JSON.parse(raw);
         if (!parsed || typeof parsed !== 'object') continue;
@@ -94,10 +110,13 @@ export class CookieSessionManager {
           updatedAt: record.updatedAt,
           expiresAt: record.expiresAt,
         });
-      } catch {
+      } catch (error) {
+        console.warn(`Personal Media Library: invalid ${provider} session`, error);
         this.clear(provider);
       }
     }
+
+    this.initialized = true;
   }
 
   async set(provider: CookieProvider, value: string, expiryDays?: number): Promise<boolean> {
@@ -109,7 +128,16 @@ export class CookieSessionManager {
       expiresAt: expiryDays && expiryDays > 0 ? Date.now() + expiryDays * 86400000 : undefined,
     };
     this.records.set(provider, record);
-    this.app.secretStorage.setSecret(IDS[provider], JSON.stringify(record));
+
+    const storage = this.app.secretStorage;
+    if (storage) {
+      try {
+        storage.setSecret(IDS[provider], JSON.stringify(record));
+      } catch (error) {
+        console.error('Personal Media Library: could not save session securely', error);
+        return false;
+      }
+    }
     return true;
   }
 
@@ -150,10 +178,20 @@ export class CookieSessionManager {
 
   clear(provider: CookieProvider): void {
     this.records.delete(provider);
-    this.app.secretStorage.setSecret(IDS[provider], '');
+    const storage = this.app.secretStorage;
+    if (!storage) return;
+    try {
+      storage.setSecret(IDS[provider], '');
+    } catch (error) {
+      console.warn(`Personal Media Library: could not clear ${provider} session`, error);
+    }
   }
 
   clearAll(): void {
     for (const provider of Object.keys(IDS) as CookieProvider[]) this.clear(provider);
+  }
+
+  isReady(): boolean {
+    return this.initialized;
   }
 }
