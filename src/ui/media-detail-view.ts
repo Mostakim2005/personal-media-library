@@ -44,10 +44,10 @@ export class MediaDetailModal extends Modal {
       contentEl.createEl('h2', { text: this.entry.translatedTitle || this.entry.title });
     }
     if (enabled(this.settings, 'originalTitle') && this.entry.originalTitle && this.entry.originalTitle !== this.entry.title) {
-      contentEl.createEl('div', { cls: 'pml-original-title', text: this.entry.originalTitle });
+      contentEl.createDiv( { cls: 'pml-original-title', text: this.entry.originalTitle });
     }
     if (enabled(this.settings, 'translatedTitle') && this.entry.translatedTitle) {
-      contentEl.createEl('div', { cls: 'pml-original-title', text: this.entry.translatedTitle });
+      contentEl.createDiv( { cls: 'pml-original-title', text: this.entry.translatedTitle });
     }
 
     const meta = contentEl.createDiv({ cls: 'pml-detail-meta' });
@@ -72,32 +72,32 @@ export class MediaDetailModal extends Modal {
     for (const [field, heading, value] of groups) {
       if (enabled(this.settings, field) && value.length) {
         contentEl.createEl('h3', { text: heading });
-        contentEl.createEl('div', { text: names(value) });
+        contentEl.createDiv( { text: names(value) });
       }
     }
 
     if (enabled(this.settings, 'genres') && this.entry.genres.length) {
       contentEl.createEl('h3', { text: 'Genres' });
-      contentEl.createEl('div', { text: this.entry.genres.join(' · ') });
+      contentEl.createDiv( { text: this.entry.genres.join(' · ') });
     }
     if (enabled(this.settings, 'tags') && this.entry.tags.length) {
       contentEl.createEl('h3', { text: 'Tags' });
-      contentEl.createEl('div', { text: this.entry.tags.join(' · ') });
+      contentEl.createDiv( { text: this.entry.tags.join(' · ') });
     }
     if (enabled(this.settings, 'parody') && this.entry.parody.length) {
       contentEl.createEl('h3', { text: 'Parody / source work' });
-      contentEl.createEl('div', { text: this.entry.parody.join(' · ') });
+      contentEl.createDiv( { text: this.entry.parody.join(' · ') });
     }
-    if (enabled(this.settings, 'country') && this.entry.country) contentEl.createEl('div', { text: `Country: ${this.entry.country}` });
-    if (enabled(this.settings, 'language') && this.entry.language) contentEl.createEl('div', { text: `Language: ${this.entry.language}` });
-    if (enabled(this.settings, 'status') && this.entry.status) contentEl.createEl('div', { text: `Status: ${this.entry.status}` });
-    if (enabled(this.settings, 'releaseDate') && this.entry.releaseDate) contentEl.createEl('div', { text: `Release: ${this.entry.releaseDate}` });
-    if (enabled(this.settings, 'episodes') && this.entry.episodes) contentEl.createEl('div', { text: `Episodes: ${this.entry.episodes}` });
-    if (enabled(this.settings, 'chapters') && this.entry.chapters) contentEl.createEl('div', { text: `Chapters / pages: ${this.entry.chapters}` });
-    if (enabled(this.settings, 'volumes') && this.entry.volumes) contentEl.createEl('div', { text: `Volumes: ${this.entry.volumes}` });
-    if (enabled(this.settings, 'studio') && this.entry.studio) contentEl.createEl('div', { text: `Studio: ${this.entry.studio}` });
-    if (enabled(this.settings, 'network') && this.entry.network) contentEl.createEl('div', { text: `Network: ${this.entry.network}` });
-    if (enabled(this.settings, 'subtitles') && this.entry.subtitles.length) contentEl.createEl('div', { text: `Subtitles: ${this.entry.subtitles.join(', ')}` });
+    if (enabled(this.settings, 'country') && this.entry.country) contentEl.createDiv( { text: `Country: ${this.entry.country}` });
+    if (enabled(this.settings, 'language') && this.entry.language) contentEl.createDiv( { text: `Language: ${this.entry.language}` });
+    if (enabled(this.settings, 'status') && this.entry.status) contentEl.createDiv( { text: `Status: ${this.entry.status}` });
+    if (enabled(this.settings, 'releaseDate') && this.entry.releaseDate) contentEl.createDiv( { text: `Release: ${this.entry.releaseDate}` });
+    if (enabled(this.settings, 'episodes') && this.entry.episodes) contentEl.createDiv( { text: `Episodes: ${this.entry.episodes}` });
+    if (enabled(this.settings, 'chapters') && this.entry.chapters) contentEl.createDiv( { text: `Chapters / pages: ${this.entry.chapters}` });
+    if (enabled(this.settings, 'volumes') && this.entry.volumes) contentEl.createDiv( { text: `Volumes: ${this.entry.volumes}` });
+    if (enabled(this.settings, 'studio') && this.entry.studio) contentEl.createDiv( { text: `Studio: ${this.entry.studio}` });
+    if (enabled(this.settings, 'network') && this.entry.network) contentEl.createDiv( { text: `Network: ${this.entry.network}` });
+    if (enabled(this.settings, 'subtitles') && this.entry.subtitles.length) contentEl.createDiv( { text: `Subtitles: ${this.entry.subtitles.join(', ')}` });
 
     const orgButton = contentEl.createEl('button', { text: 'Organize' });
     orgButton.addEventListener('click', () => new OrganizationModal(
@@ -107,12 +107,12 @@ export class MediaDetailModal extends Modal {
       async (update) => { await this.onPersistOrganization?.(update); },
     ).open());
 
-    if (this.entry.collections.length) contentEl.createEl('div', { cls: 'pml-card-tags', text: `Collections: ${this.entry.collections.join(' · ')}` });
+    if (this.entry.collections.length) contentEl.createDiv( { cls: 'pml-card-tags', text: `Collections: ${this.entry.collections.join(' · ')}` });
     if (this.entry.relations.length) {
       contentEl.createEl('h3', { text: 'Related works' });
       for (const relation of this.entry.relations) {
         const target = this.allEntries.find((item) => item.id === relation.targetId);
-        contentEl.createEl('div', { text: `${relation.type}: ${target?.title ?? relation.targetId}` });
+        contentEl.createDiv( { text: `${relation.type}: ${target?.title ?? relation.targetId}` });
       }
     }
 
@@ -194,7 +194,7 @@ class PageViewerModal extends Modal {
     image.src = this.pageUrl;
     image.alt = this.pageLabel;
     image.loading = 'eager';
-    this.contentEl.createEl('div', { cls: 'pml-page-counter', text: this.pageLabel });
+    this.contentEl.createDiv( { cls: 'pml-page-counter', text: this.pageLabel });
   }
 
   override onClose(): void {

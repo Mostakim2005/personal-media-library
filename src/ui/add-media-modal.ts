@@ -28,7 +28,7 @@ export class AddMediaModal extends Modal {
       .setName('Source URL')
       .setDesc('Paste a manga, anime, video, film, or series link.')
       .addText((text) => text
-        .setPlaceholder('https://...')
+        .setPlaceholder('HTTPS://...')
         .onChange((value) => { this.url = value.trim(); }));
 
     new Setting(contentEl)

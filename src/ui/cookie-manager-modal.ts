@@ -31,7 +31,7 @@ export class CookieManagerModal extends Modal {
     contentEl.createEl('h2', { text: 'Provider sessions' });
     contentEl.createEl('p', {
       cls: 'mod-muted',
-      text: 'Save your own session cookies in Obsidian SecretStorage. Cookies are used only for normal authenticated requests to the matching provider and are never written to data.json.',
+      text: 'Store your own session cookies securely. They are used only for normal authenticated requests to the matching provider and are never written to data.json.',
     });
 
     for (const [provider, label] of PROVIDERS) {
@@ -59,7 +59,7 @@ export class CookieManagerModal extends Modal {
 
     new Setting(contentEl)
       .setName('Security boundary')
-      .setDesc('The plugin does not import browser cookie databases and does not attempt to bypass CAPTCHA, bot challenges, paywalls, or access controls.');
+      .setDesc('The plugin does not import browser cookie databases or attempt to bypass captcha, bot challenges, paywalls, or access controls.');
   }
 
   private openEditor(provider: CookieProvider, label: string): void {
@@ -94,7 +94,7 @@ class CookieEditorModal extends Modal {
     contentEl.createEl('h3', { text: `Save ${this.label} session` });
     new Setting(contentEl)
       .setName('Cookie header')
-      .setDesc('Paste a normal Cookie header value such as sid=...; token=.... Treat session cookies like passwords.')
+      .setDesc('Paste a normal cookie header value such as sid=...; token=.... Treat session cookies like passwords.')
       .addText((text) => text
         .setPlaceholder('name=value; name2=value2')
         .onChange((value) => { this.value = value; }));

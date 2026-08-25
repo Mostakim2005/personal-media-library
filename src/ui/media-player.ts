@@ -272,7 +272,7 @@ export class MediaPlayer {
   private renderChapters(): void {
     this.chaptersEl.empty();
     if (!this.scenes.length) return;
-    this.chaptersEl.createEl('div', { cls: 'pml-chapters-heading', text: 'Chapters and scenes' });
+    this.chaptersEl.createDiv( { cls: 'pml-chapters-heading', text: 'Chapters and scenes' });
     for (const scene of [...this.scenes].sort((a, b) => a.startSeconds - b.startSeconds)) {
       const row = this.chaptersEl.createEl('button', { cls: 'pml-chapter', attr: { type: 'button' } });
       row.createSpan({ cls: 'pml-chapter-time', text: formatTimecode(scene.startSeconds) });

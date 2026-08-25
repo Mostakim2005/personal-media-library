@@ -25,7 +25,7 @@ export class DuplicateReviewModal extends Modal {
       const row = contentEl.createDiv({ cls: 'pml-duplicate-row' });
       const info = row.createDiv({ cls: 'pml-duplicate-info' });
       info.createEl('strong', { text: `${candidate.left.title} ↔ ${candidate.right.title}` });
-      info.createEl('div', { cls: 'mod-muted', text: `${Math.round(candidate.score * 100)}% match · ${candidate.reason}` });
+      info.createDiv( { cls: 'mod-muted', text: `${Math.round(candidate.score * 100)}% match · ${candidate.reason}` });
 
       const actions = row.createDiv({ cls: 'pml-duplicate-actions' });
       const left = actions.createEl('button', { text: 'Keep left' });
