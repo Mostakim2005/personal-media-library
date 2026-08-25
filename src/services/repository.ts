@@ -1,4 +1,5 @@
 import { TFile, TFolder, Vault } from 'obsidian';
+import type { FileManager } from 'obsidian';
 import type { MediaEntry } from '../types';
 import { makeId } from '../utils/id';
 import { CURRENT_SCHEMA_VERSION, migrateMediaEntry } from './migrations';
@@ -24,7 +25,7 @@ function decodeEntry(content: string): MediaEntry | undefined {
 }
 
 export class MediaRepository {
-  constructor(private readonly vault: Vault, private readonly folder: string) {}
+  constructor(private readonly vault: Vault, private readonly fileManager: FileManager, private readonly folder: string) {}
 
   async ensureFolder(): Promise<void> {
     const existing = this.vault.getAbstractFileByPath(this.folder);
@@ -83,7 +84,7 @@ export class MediaRepository {
   }
 
   async delete(file: TFile): Promise<void> {
-    await this.vault.delete(file);
+    await this.fileManager.trashFile(file);
   }
 
   private async listDeterministic(folder: TFolder): Promise<Array<{ file: TFile; entry: MediaEntry }>> {
